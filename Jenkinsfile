@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven3'
-        jdk 'Java17'
-    }
-
     environment {
         DOCKER_IMAGE = "gscomp285:latest"
         DOCKER_REGISTRY = "your-dockerhub-username/gscomp285"
@@ -14,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/your-username/gscomp285.git'
+                git branch: 'main', url: 'https://github.com/nsbweerasingha/msc-test.git'
             }
         }
 
@@ -56,10 +51,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment successful!"
+            echo "Deployment successful!"
         }
         failure {
-            echo "❌ Build/Deploy failed!"
+            echo "Build/Deploy failed!"
         }
     }
 }
