@@ -1,28 +1,24 @@
-# ==============================
-# 1. Build stage
-# ==============================
-FROM maven:3.9.6-eclipse-temurin-17 AS builder
-
+# ====== Build Stage ======
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
-# Copy pom.xml and download dependencies (better caching)
+# Copy pom.xml and download dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 
-# Copy source code and build
+# Copy source and build application
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-# ==============================
-# 2. Runtime stage
-# ==============================
-FROM eclipse-temurin:17-jdk-jammy
-
+# ====== Runtime Stage ======
+FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
-# Copy jar from build stage
-COPY --from=builder /app/target/*.jar app.jar
+# Copy built JAR from builder stage
+COPY --from=build /app/target/gscomp285-0.0.1-SNAPSHOT.jar app.jar
 
-EXPOSE 8080
+# Expose application port
+EXPOSE 8086
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run the application
+ENTRYPOINT ["java","-jar","app.jar"]

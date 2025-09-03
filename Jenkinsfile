@@ -2,24 +2,29 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven_3.9'   // Make sure Jenkins has Maven installed with this name
-        jdk 'JDK_17'        // Configure JDK 17 in Jenkins
+        maven 'Maven3'
+        jdk 'Java17'
     }
 
     environment {
-        IMAGE_NAME = "springboot-app"
-        IMAGE_TAG = "latest"
+        DOCKER_IMAGE = "gscomp285:latest"
+        DOCKER_REGISTRY = "your-dockerhub-username/gscomp285"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/your-repo/springboot-app.git'
+                git branch: 'main', url: 'https://github.com/your-username/gscomp285.git'
             }
         }
 
-        stage('Build JAR') {
+        stage('Build & Test') {
+            steps {
+                sh 'mvn clean test'
+            }
+        }
+
+        stage('Package Jar') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
@@ -27,21 +32,34 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                sh 'docker build -t $DOCKER_IMAGE .'
             }
         }
 
-        stage('Run with Docker Compose') {
+        stage('Push to DockerHub') {
             steps {
-                sh 'docker-compose down || true'
-                sh 'docker-compose up -d --build'
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh 'docker tag $DOCKER_IMAGE $DOCKER_REGISTRY'
+                    sh 'docker push $DOCKER_REGISTRY'
+                }
+            }
+        }
+
+        stage('Deploy with Docker Compose') {
+            steps {
+                sh 'docker compose down || true'
+                sh 'docker compose up -d --build'
             }
         }
     }
 
     post {
-        always {
-            sh 'docker ps -a'
+        success {
+            echo "✅ Deployment successful!"
+        }
+        failure {
+            echo "❌ Build/Deploy failed!"
         }
     }
 }
