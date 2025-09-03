@@ -1,14 +1,28 @@
-# Step 1: Use an OpenJDK base image
-FROM openjdk:17-jdk-slim
+# ==============================
+# 1. Build stage
+# ==============================
+FROM maven:3.9.6-eclipse-temurin-17 AS builder
 
-# Step 2: Set working directory inside container
 WORKDIR /app
 
-# Step 3: Copy the jar file into container
-COPY target/gscomp285-0.0.1-SNAPSHOT.jar app.jar
+# Copy pom.xml and download dependencies (better caching)
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Step 4: Expose the port (default Spring Boot runs on 8080)
-EXPOSE 8086
+# Copy source code and build
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Step 5: Run the jar file
+# ==============================
+# 2. Runtime stage
+# ==============================
+FROM eclipse-temurin:17-jdk-jammy
+
+WORKDIR /app
+
+# Copy jar from build stage
+COPY --from=builder /app/target/*.jar app.jar
+
+EXPOSE 8080
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
