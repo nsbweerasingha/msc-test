@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "gscomp285:latest"
-        DOCKER_REGISTRY = "your-dockerhub-username/gscomp285"
+        DOCKER_REGISTRY = "djneranjan2003/gscomp285"
     }
 
     stages {
